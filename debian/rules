@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+DEB_UPSTREAM_VERSION=$(shell dpkg-parsechangelog | sed -rne 's,^Version: ([^-]+).*,\1,p')
+
+override_dh_auto_configure:
+	echo $(DEB_UPSTREAM_VERSION) > .version
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+
+%:
+	dh $@ --buildsystem=cmake --sourcedirectory=.

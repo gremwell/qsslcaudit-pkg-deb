@@ -1,0 +1,5 @@
+qsslcaudit (0.7.1-1ubuntu1ppa1~ubuntu18.04.1) bionic; urgency=low
+
+  * initial build for Ubuntu 18.04
+
+ -- Pavel Nakonechnyi <pavel@gremwell.com>  Tue, 25 Sep 2019 12:00:00 +0100
