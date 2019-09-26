@@ -1,0 +1,5 @@
+qsslcaudit (0.7.1-1kali1) kali; urgency=low
+
+  * initial build for Kali
+
+ -- Pavel Nakonechnyi <pavel@gremwell.com>  Tue, 25 Sep 2019 12:00:00 +0100
