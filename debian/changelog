@@ -1,5 +1,5 @@
-qsslcaudit (0.7.1-1ubuntu1ppa1~ubuntu18.04.1) bionic; urgency=low
+qsslcaudit (0.7.1-1ubuntu1ppa1~ubuntu19.10) eoan; urgency=low
 
-  * initial build for Ubuntu 18.04
+  * initial build for Ubuntu 19.10
 
- -- Pavel Nakonechnyi <pavel@gremwell.com>  Tue, 25 Sep 2019 12:00:00 +0100
+ -- Pavel Nakonechnyi <pavel@gremwell.com>  Thu, 20 Feb 2020 12:00:00 +0100
