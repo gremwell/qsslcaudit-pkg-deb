@@ -1,3 +1,9 @@
+qsslcaudit (0.8.0-1ubuntu1ppa1~ubuntu16.04.1) xenial; urgency=low
+
+  * v0.8.0
+
+ -- Pavel Nakonechnyi <pavel@gremwell.com>  Tue, 25 Feb 2020 12:00:00 +0100
+
 qsslcaudit (0.7.1-1ubuntu1ppa1~ubuntu16.04.1) xenial; urgency=low
 
   * initial build for Ubuntu 16.04
