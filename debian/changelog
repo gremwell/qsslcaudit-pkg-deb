@@ -1,3 +1,9 @@
+qsslcaudit (0.8.1-1ubuntu1ppa1~ubuntu19.10) eoan; urgency=low
+
+  * v0.8.1
+
+ -- Pavel Nakonechnyi <pavel@gremwell.com>  Tue, 25 Feb 2020 12:00:00 +0100
+
 qsslcaudit (0.7.1-1ubuntu1ppa1~ubuntu19.10) eoan; urgency=low
 
   * initial build for Ubuntu 19.10
