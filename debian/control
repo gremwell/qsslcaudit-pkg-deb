@@ -1,7 +1,7 @@
 Source: qsslcaudit
 Section: misc
 Priority: optional
-Maintainer: Pavel Nakonechnyi <pavel@gremwell.com>
+Maintainer: Pavel Nakonechnyi <packaging@gremwell.com>
 Build-Depends: debhelper (>= 9), cmake, qtbase5-dev, libgnutls28-dev, libunsafessl-dev, libcrypto++-dev
 Standards-Version: 4.1.1
 Homepage: https://github.com/gremwell/qsslcaudit
