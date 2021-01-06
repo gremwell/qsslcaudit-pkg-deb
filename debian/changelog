@@ -1,3 +1,9 @@
+qsslcaudit (0.8.2-1ubuntu1ppa1~ubuntu16.04.7) xenial; urgency=low
+
+  * v0.8.2
+
+ -- Pavel Nakonechnyi <packaging@gremwell.com>  Wed, 06 Jan 2021 12:00:00 +0100
+
 qsslcaudit (0.8.1-1ubuntu1ppa1~ubuntu16.04.1) xenial; urgency=low
 
   * v0.8.1
