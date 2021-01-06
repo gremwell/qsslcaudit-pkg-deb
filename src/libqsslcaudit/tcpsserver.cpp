@@ -3,7 +3,7 @@
 #include "sslusersettings.h"
 #include "starttls.h"
 
-TcpsServer::TcpsServer(const SslUserSettings &settings,
+TcpsServer::TcpsServer(const SslUserSettings *settings,
                        QList<XSslCertificate> localCert,
                        XSslKey privateKey,
                        XSsl::SslProtocol sslProtocol,
@@ -15,10 +15,12 @@ TcpsServer::TcpsServer(const SslUserSettings &settings,
     m_sslProtocol(sslProtocol),
     m_sslCiphers(sslCiphers)
 {
-    m_startTlsProtocol = settings.getStartTlsProtocol();
-    m_forwardHost = settings.getForwardHostAddr();
-    m_forwardPort = settings.getForwardHostPort();
-    m_waitDataTimeout = settings.getWaitDataTimeout();
+    m_startTlsProtocol = settings->getStartTlsProtocol();
+    m_forwardHost = settings->getForwardHostAddr();
+    m_forwardPort = settings->getForwardHostPort();
+    m_waitDataTimeout = settings->getWaitDataTimeout();
+
+    m_isForwarding = false;
 }
 
 void TcpsServer::handleStartTls(XSslSocket *const socket)
@@ -90,17 +92,16 @@ void TcpsServer::handleIncomingConnection(XSslSocket *sslSocket)
 
     emit newPeer(sslSocket->peerAddress());
 
+    // handling socket errors makes sence only in non-interception mode
+    connect(sslSocket, &XSslSocket::encrypted, this, &TcpsServer::handleSslHandshakeFinished);
+    connect(sslSocket, &XSslSocket::peerVerifyError, this, &TcpsServer::peerVerifyError);
+    connect(sslSocket, static_cast<void(XSslSocket::*)(const QList<XSslError> &)>(&XSslSocket::sslErrors),
+            this, &TcpsServer::sslErrors);
+
     if (!m_forwardHost.isNull()) {
         // this will loop until connection is interrupted
         proxyConnection(sslSocket);
     } else {
-        // handling socket errors makes sence only in non-interception mode
-
-        connect(sslSocket, &XSslSocket::encrypted, this, &TcpsServer::handleSslHandshakeFinished);
-        connect(sslSocket, &XSslSocket::peerVerifyError, this, &TcpsServer::peerVerifyError);
-        connect(sslSocket, static_cast<void(XSslSocket::*)(const QList<XSslError> &)>(&XSslSocket::sslErrors),
-                this, &TcpsServer::sslErrors);
-
         // no 'forward' option -- just read the first packet of unencrypted data and close the connection
         if (sslSocket->waitForReadyRead(m_waitDataTimeout)) {
             QByteArray message = sslSocket->readAll();
@@ -111,16 +112,20 @@ void TcpsServer::handleIncomingConnection(XSslSocket *sslSocket)
         } else {
             VERBOSE("no unencrypted data received (" + sslSocket->errorString() + ")");
         }
+    }
 
 #ifdef UNSAFE_QSSL
-        emit rawDataCollected(sslSocket->getRawReadData(), sslSocket->getRawWrittenData());
+    emit rawDataCollected(sslSocket->getRawReadData(), sslSocket->getRawWrittenData());
 #endif
 
-        sslSocket->disconnectFromHost();
-        if (sslSocket->state() != QAbstractSocket::UnconnectedState)
-            sslSocket->waitForDisconnected();
-        VERBOSE("disconnected");
-    }
+    sslSocket->disconnectFromHost();
+    if (sslSocket->state() != QAbstractSocket::UnconnectedState)
+        sslSocket->waitForDisconnected();
+    sslSocket->deleteLater();
+
+    VERBOSE("disconnected");
+
+    emit sessionFinished();
 }
 
 void TcpsServer::proxyConnection(XSslSocket *sslSocket)
@@ -130,6 +135,16 @@ void TcpsServer::proxyConnection(XSslSocket *sslSocket)
     // - synchronously read data from ssl socket
     // - synchronously send this data to proxy
     QTcpSocket proxy;
+    QByteArray data;
+
+    // before connecting to the proxy, collect data from the socket
+    // it will make tests decision logic happy
+    // we also need waitFor() here. it gives some windows for signal/slots subsystem to
+    // process all events from SSL socket
+    if (sslSocket->waitForReadyRead(100)) {
+        data = sslSocket->readAll();
+        emit dataIntercepted(data);
+    }
 
     proxy.connectToHost(m_forwardHost, m_forwardPort);
 
@@ -139,14 +154,26 @@ void TcpsServer::proxyConnection(XSslSocket *sslSocket)
         WHITE("forwarding incoming data to the provided proxy");
         WHITE("to get test results, relauch this app without 'forward' option");
 
-        while (1) {
+        // disconnect socket errors slot, otherwise it will flood us with 'timeout' errors
+        disconnect(sslSocket, static_cast<void(XSslSocket::*)(QAbstractSocket::SocketError)>(&XSslSocket::error),
+                   this, &TcpsServer::handleSocketError);
+
+        // start with sending previously read data
+        proxy.write(data);
+
+        // we wait until one of the communicating parties disconnect the socket
+        // or SIGINT is sent
+        m_stopForwarding = false;
+        m_isForwarding = true;
+
+        while (!m_stopForwarding) {
             if (sslSocket->state() == QAbstractSocket::UnconnectedState)
                 break;
             if (proxy.state() == QAbstractSocket::UnconnectedState)
                 break;
 
             if (sslSocket->waitForReadyRead(100)) {
-                QByteArray data = sslSocket->readAll();
+                data = sslSocket->readAll();
 
                 emit dataIntercepted(data);
 
@@ -154,8 +181,26 @@ void TcpsServer::proxyConnection(XSslSocket *sslSocket)
             }
 
             if (proxy.waitForReadyRead(100)) {
-                sslSocket->write(proxy.readAll());
+                data = proxy.readAll();
+
+                emit dataIntercepted(data);
+
+                sslSocket->write(data);
             }
         }
+
+        // return socket errors handling
+        connect(sslSocket, static_cast<void(XSslSocket::*)(QAbstractSocket::SocketError)>(&XSslSocket::error),
+                this, &TcpsServer::handleSocketError);
     }
+}
+
+bool TcpsServer::isForwarding()
+{
+    return m_isForwarding;
+}
+
+void TcpsServer::handleSigInt()
+{
+    m_stopForwarding = true;
 }
