@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(QSSLC_VERSION_MAJOR 0)
 set(QSSLC_VERSION_MINOR 8)
-set(QSSLC_VERSION_PATCH 2)
+set(QSSLC_VERSION_PATCH 3)
 set(QSSLC_VERSION "${QSSLC_VERSION_MAJOR}.${QSSLC_VERSION_MINOR}.${QSSLC_VERSION_PATCH}")
 # version formatting stolen from KeepAssXC's CMakeLists.txt :-)
 set(OVERRIDE_VERSION "" CACHE STRING "Override the qsslcaudit Version for Snapshot builds")
@@ -154,7 +154,10 @@ add_definitions(-DQSSLC_VERSION="${QSSLC_VERSION}")
 
 find_package(CryptoPP REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+SET(CMAKE_CXX_STANDARD 11)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 
 set(THIRDPARTY_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
 set(UNSAFESSL_DIR "${CMAKE_SOURCE_DIR}/src/unsafessl")
