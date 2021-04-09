@@ -295,6 +295,25 @@ const SslCheckReport SslCheckCertificateRefused::doCheck(const ClientInfo *clien
     return rep;
 }
 
+const SslCheckReport SslCheckNoSharedCipher::doCheck(const ClientInfo *client) const
+{
+    SslCheckReport rep;
+
+    rep.suggestedTestResult = SslTestResult::Success;
+    rep.isPassed = true;
+
+    if (!client->sslConnectionEstablished()
+            && (client->sslErrorsStr().filter(QString("no shared cipher")).size() > 0)) {
+        rep.report = QString("client accepted our protocol but explicitly refused our ciphers");
+        rep.suggestedTestResult = SslTestResult::Undefined;
+        rep.comment = QString("");
+        rep.isPassed = false;
+        return rep;
+    }
+
+    return rep;
+}
+
 const SslCheckReport SslCheckHttpsClient::doCheck(const ClientInfo *client) const
 {
     SslCheckReport rep;
@@ -311,7 +330,7 @@ const SslCheckReport SslCheckHttpsClient::doCheck(const ClientInfo *client) cons
 
     if (client->hasHelloMessage()
             && client->tlsHelloInfo.hnd_hello.alpn.isEmpty()) {
-        rep.report = QString("client does not explitictly defines expected protocol");
+        rep.report = QString("client does not explitictly define application layer protocol");
         rep.suggestedTestResult = SslTestResult::Undefined;
         rep.comment = QString("");
         rep.isPassed = false;
